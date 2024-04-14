@@ -1,7 +1,7 @@
 import sys
 import binary_wrapper as bw
 
-FLAGS = {'CF': None, 'OF': None}
+FLAGS = {'CF': None, 'OF': None, 'SF': None, 'ZF': None }
 REG_SIZES = [8, 16, 32, 64]
 
 def create_wrappers(input_str : str, bit_count : int):
@@ -45,6 +45,13 @@ def add(arg_1, arg_2, reg_size):
   else:
     FLAGS['OF'] = 0
 
+  # Checking Sign Flag
+  FLAGS['SF'] = total.first_bit
+
+  # Checking Zero Flag
+  FLAGS['ZF'] = 1 if total == bw.Binary_wrapper(0, reg_size) else 0
+
+
 def sub(arg_1, arg_2, reg_size):
   total = arg_1 - arg_2
   print(f"Result: {total.binary_str}")
@@ -61,9 +68,15 @@ def sub(arg_1, arg_2, reg_size):
   else:
     FLAGS['OF'] = 0
 
+  # Checking Sign Flag
+  FLAGS['SF'] = total.first_bit
+
+  # Checking Zero Flag
+  FLAGS['ZF'] = 1 if total == bw.Binary_wrapper(0, reg_size) else 0
+
 def print_flags() :
   for flag, value in FLAGS.items():
-    print(f"{flag}: {value}")
+    print(f"{flag} = {value}", end="|")
 
 def main():
   control_args()
@@ -77,6 +90,8 @@ def main():
   instuction_type = input_instruction[:3]
   arg_1 = create_wrappers(sys.argv[2], reg_size)
   arg_2 = create_wrappers(sys.argv[3], reg_size)
+
+  print(arg_1, arg_2)
 
   if "ADD" == instuction_type:
     add(arg_1, arg_2, reg_size)
