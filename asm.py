@@ -1,76 +1,89 @@
-# ADD fonksiyonu implemente edilecek
-# Sonuc yazdirilacak (HEX)
-# Sonucun bit temsili yazdirilacak
-# int veya hex degerleriyle argumanlar alinacak.
-
-
 import sys
-from operator import *
+import binary_wrapper as bw
 
 FLAGS = {'CF': None, 'OF': None}
+REG_SIZES = [8, 16, 32, 64]
 
-
-class Binary_wrapper:
-  def __init__(self, decimal) :
-    self.binary_str = self._get_binary_string(decimal)
-    self.max_bit = decimal.bit_length()
-    self.first_bit_set = True if self.max_bit % 4 == 0 and self.max_bit else False
-
-  def __add__(self, other):
-    total_decimal = add(int(self.binary_str, 2), int(other.binary_str, 2))
-    total_Binary_wrapper = Binary_wrapper(total_decimal)
-    return total_Binary_wrapper
-  
-  def _get_binary_string(self, decimal : int):
-    return bin(decimal).lstrip('0b')
-  
-
-def check_argument(input : str):
+def create_wrappers(input_str : str, bit_count : int):
   decimal = None
-  if input.startswith('0x'): 
-    decimal = int(input.lstrip('0x'), 16)
-  elif input.startswith('0b'):
-    decimal = int(input.lstrip('0b'), 2)
-  elif isinstance(input, int):
-    decimal = input
-
-  fixed_bit = Binary_wrapper(decimal)
-  return fixed_bit
- 
-# script_name = sys.argv[0] -> no need for the script_name
-
-if len(sys.argv) != 4:
-  raise ValueError("Provide instruction and 2 values(hex, decimal)")
-else:
-  instruction = sys.argv[1]
-
-  instructions = ["ADD", "SUM"]
-  if instruction not in instructions:
-    raise ValueError("Instruction is not valid")
+  if input_str.startswith('0x'): 
+    decimal = int(input_str.lstrip('0x'), 16)
+  elif input_str.startswith('0b'):
+    decimal = int(input_str.lstrip('0b'), 2)
   else:
-    first_arg = check_argument(sys.argv[2])
-    second_arg = check_argument(sys.argv[3])
+    decimal = int(input_str)
 
-    if "ADD" == instruction:
-      max_bit_args = max([first_arg.max_bit, second_arg.max_bit] )
+  fixed_bit = bw.Binary_wrapper(decimal, bit_count)
+  return fixed_bit
+  
+def control_args() :
+  if len(sys.argv) != 4:
+    print("Provide instruction and 2 values(hex, decimal)")
+    exit()
+  
+def control_instruction(instruction_list, instruction : str):
+  if instruction not in instruction_list:
+    print(f"Instruction must be one of these : \n {instruction_list}")
+    exit()
 
-      
+def create_instruction_list():
+  return [f"ADD{i}" for i in REG_SIZES] + [f"SUB{i}" for i in REG_SIZES]
+  
+def add(arg_1, arg_2, reg_size):
+  total = arg_1 + arg_2
+  print(f"Result: {total.binary_str}")
 
-    # if 'ADD' == instruction:
-    #   pass
-    # elif 'SUB' == instruction:
-    #   pass
+  # Checking Carry Flag (unsigned)
+  if total.bit_count > reg_size:
+    FLAGS['CF'] = 1
+  else: 
+    FLAGS['CF'] = 0
 
+  # Checking Overflow Flag (signed)
+  if not (arg_1.first_bit ^ arg_2.first_bit) and total.first_bit :
+    FLAGS['OF'] = 1
+  else:
+    FLAGS['OF'] = 0
 
+def sub(arg_1, arg_2, reg_size):
+  total = arg_1 - arg_2
+  print(f"Result: {total.binary_str}")
 
+  # Checking Carry Flag (unsigned)
+  if arg_1 < arg_2:
+    FLAGS['CF'] = 1
+  else: 
+    FLAGS['CF'] = 0
 
+  # Checking Overflow Flag (signed)
+  if total.first_bit != arg_1.first_bit:
+    FLAGS['OF'] = 1
+  else:
+    FLAGS['OF'] = 0
 
-hex_str = "FFFFF"
-binary_val = int(hex_str, 16)
+def print_flags() :
+  for flag, value in FLAGS.items():
+    print(f"{flag}: {value}")
 
-print(binary_val)
-# binary_val = bin(decimal_val)[2:]
+def main():
+  control_args()
 
-# my_int.bit_length() % 4 == 0
+  instruction_list = create_instruction_list()
 
+  input_instruction = sys.argv[1]
+  control_instruction(instruction_list, input_instruction)
 
+  reg_size = int(input_instruction[3:])
+  instuction_type = input_instruction[:3]
+  arg_1 = create_wrappers(sys.argv[2], reg_size)
+  arg_2 = create_wrappers(sys.argv[3], reg_size)
+
+  if "ADD" == instuction_type:
+    add(arg_1, arg_2, reg_size)
+  elif "SUB" == instuction_type:
+    sub(arg_1, arg_2, reg_size)
+
+  print_flags()
+
+if __name__ == "__main__":
+  main()
