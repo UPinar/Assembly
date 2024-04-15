@@ -37,10 +37,8 @@ CMAIN:
         ;MOV [deneme], [sum]
         
     ; destination and source operands must be the same size  
-        ;MOV rax, r10w  
-          ;-> r10w is 16 bit, rax is 64 bit
-        ;MOV rax, DWORD[books] 
-          ;-> rax is 64 bit, books is 32 bit
+        ;MOV rax, r10w
+        ;MOV rax, DWORD[books]
 ; --------NOT VALID--------
     
     
