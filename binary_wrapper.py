@@ -27,6 +27,9 @@ class Binary_wrapper:
   def __lt__(self, other):
     return int(self.binary_str, 2) < int(other.binary_str, 2)
   
+  def __eq__(self, other):
+    return int(self.binary_str, 2) == int(other.binary_str, 2) and self.bit_count == other.bit_count
+  
   def _get_binary_string(self, decimal : int):
     if decimal < 0:
       return self._get_twos_complement(decimal, self.bit_count)
@@ -35,3 +38,4 @@ class Binary_wrapper:
 
   def _get_twos_complement(self, value, bits):
     return bin(value & (1 << bits) - 1)[2:].zfill(bits)
+  
