@@ -15,20 +15,24 @@ def create_wrappers(input_str : str, bit_count : int):
 
   fixed_bit = bw.Binary_wrapper(decimal, bit_count)
   return fixed_bit
+ 
   
 def control_args() :
   if len(sys.argv) != 4:
     print("Provide instruction and 2 values(hex, decimal)")
     exit()
-  
+
+
 def control_instruction(instruction_list, instruction : str):
   if instruction not in instruction_list:
     print(f"Instruction must be one of these : \n {instruction_list}")
     exit()
 
+
 def create_instruction_list():
   return [f"ADD{i}" for i in REG_SIZES] + [f"SUB{i}" for i in REG_SIZES]
   
+
 def add(arg_1, arg_2, reg_size):
   result_obj, total_bitlength = arg_1 + arg_2
   print(f"Result: {result_obj}")
@@ -41,13 +45,13 @@ def add(arg_1, arg_2, reg_size):
 
   # Checking Overflow Flag (signed)
   # If both operands have the same sign and the result has a different sign, then the overflow flag is set.
-  if not (arg_1.first_bit ^ arg_2.first_bit) and arg_1.first_bit != result_obj.first_bit:
+  if not (arg_1.sign_bit ^ arg_2.sign_bit) and arg_1.sign_bit != result_obj.sign_bit:
     FLAGS['OF'] = 1
   else:
     FLAGS['OF'] = 0
 
   # Checking Sign Flag
-  FLAGS['SF'] = result_obj.first_bit
+  FLAGS['SF'] = result_obj.sign_bit
 
   # Checking Zero Flag
   FLAGS['ZF'] = 1 if result_obj == bw.Binary_wrapper(0, reg_size) else 0
@@ -64,20 +68,22 @@ def sub(arg_1, arg_2, reg_size):
     FLAGS['CF'] = 0
 
   # Checking Overflow Flag (signed)
-  if arg_1.first_bit != arg_2.first_bit and arg_1.first_bit != total.first_bit:
+  if arg_1.sign_bit != arg_2.sign_bit and arg_1.sign_bit != total.sign_bit:
     FLAGS['OF'] = 1
   else:
     FLAGS['OF'] = 0
 
   # Checking Sign Flag
-  FLAGS['SF'] = total.first_bit
+  FLAGS['SF'] = total.sign_bit
 
   # Checking Zero Flag
   FLAGS['ZF'] = 1 if total == bw.Binary_wrapper(0, reg_size) else 0
 
+
 def print_flags() :
   for flag, value in FLAGS.items():
     print(f"{flag} = {value}", end="|")
+
 
 def main():
   control_args()

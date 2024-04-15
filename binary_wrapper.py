@@ -2,8 +2,7 @@ class Binary_wrapper:
   def __init__(self, decimal : int, bit_count : int): 
     self.bit_count = bit_count
     self.binary_str = self._get_binary_string(decimal)
-    self.first_bit = int(self.binary_str[0])
-    self.is_negative = self.first_bit == 1
+    self.sign_bit = int(self.binary_str[0])
 
   def __repr__(self) -> str:
     binary_str_with_spaces = ' '.join(self.binary_str[i:i+4] for i in range(0, len(self.binary_str), 4))
@@ -20,9 +19,10 @@ class Binary_wrapper:
     return result_obj, total_bitlength
   
   def __sub__(self, other):
-    total_decimal = int(self.binary_str, 2) - int(other.binary_str, 2)
-    total_Binary_wrapper = Binary_wrapper(total_decimal, self.bit_count)
-    return total_Binary_wrapper
+    total_val = int(self.binary_str, 2) - int(other.binary_str, 2)
+
+    result_obj = Binary_wrapper(total_val, self.bit_count)
+    return result_obj
   
   def __lt__(self, other):
     return int(self.binary_str, 2) < int(other.binary_str, 2)
