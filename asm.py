@@ -30,31 +30,32 @@ def create_instruction_list():
   return [f"ADD{i}" for i in REG_SIZES] + [f"SUB{i}" for i in REG_SIZES]
   
 def add(arg_1, arg_2, reg_size):
-  total = arg_1 + arg_2
-  print(f"Result: {total.binary_str}")
+  result_obj, total_bitlength = arg_1 + arg_2
+  print(f"Result: {result_obj}")
 
   # Checking Carry Flag (unsigned)
-  if total.bit_count > reg_size:
+  if total_bitlength > reg_size:
     FLAGS['CF'] = 1
   else: 
     FLAGS['CF'] = 0
 
   # Checking Overflow Flag (signed)
-  if not (arg_1.first_bit ^ arg_2.first_bit) and total.first_bit :
+  # If both operands have the same sign and the result has a different sign, then the overflow flag is set.
+  if not (arg_1.first_bit ^ arg_2.first_bit) and arg_1.first_bit != result_obj.first_bit:
     FLAGS['OF'] = 1
   else:
     FLAGS['OF'] = 0
 
   # Checking Sign Flag
-  FLAGS['SF'] = total.first_bit
+  FLAGS['SF'] = result_obj.first_bit
 
   # Checking Zero Flag
-  FLAGS['ZF'] = 1 if total == bw.Binary_wrapper(0, reg_size) else 0
+  FLAGS['ZF'] = 1 if result_obj == bw.Binary_wrapper(0, reg_size) else 0
 
 
 def sub(arg_1, arg_2, reg_size):
   total = arg_1 - arg_2
-  print(f"Result: {total.binary_str}")
+  print(f"Result: {total}")
 
   # Checking Carry Flag (unsigned)
   if arg_1 < arg_2:
@@ -63,7 +64,7 @@ def sub(arg_1, arg_2, reg_size):
     FLAGS['CF'] = 0
 
   # Checking Overflow Flag (signed)
-  if total.first_bit != arg_1.first_bit:
+  if arg_1.first_bit != arg_2.first_bit and arg_1.first_bit != total.first_bit:
     FLAGS['OF'] = 1
   else:
     FLAGS['OF'] = 0
@@ -91,7 +92,8 @@ def main():
   arg_1 = create_wrappers(sys.argv[2], reg_size)
   arg_2 = create_wrappers(sys.argv[3], reg_size)
 
-  print(arg_1, arg_2)
+  print(f"arg_1 = {arg_1}") 
+  print(f"arg_2 = {arg_2}")
 
   if "ADD" == instuction_type:
     add(arg_1, arg_2, reg_size)

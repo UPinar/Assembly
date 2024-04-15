@@ -6,12 +6,18 @@ class Binary_wrapper:
     self.is_negative = self.first_bit == 1
 
   def __repr__(self) -> str:
-    return f"{self.binary_str}"
+    binary_str_with_spaces = ' '.join(self.binary_str[i:i+4] for i in range(0, len(self.binary_str), 4))
+    return binary_str_with_spaces
 
   def __add__(self, other):
-    total_decimal = int(self.binary_str, 2) + int(other.binary_str, 2)
-    total_Binary_wrapper = Binary_wrapper(total_decimal, total_decimal.bit_length())
-    return total_Binary_wrapper
+    total_val = int(self.binary_str, 2) + int(other.binary_str, 2)
+
+    total_bitlength = total_val.bit_length()
+    if total_bitlength > self.bit_count:
+      total_val = total_val & ((1 << self.bit_count) - 1)
+
+    result_obj = Binary_wrapper(total_val, self.bit_count)
+    return result_obj, total_bitlength
   
   def __sub__(self, other):
     total_decimal = int(self.binary_str, 2) - int(other.binary_str, 2)
