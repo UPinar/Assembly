@@ -1,98 +1,98 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 import time
+import threading
 
 # Set up webdriver instance
-driver = webdriver.Firefox()  # or webdriver.Chrome()
+driver = webdriver.Firefox()  
 
 # Navigate to the website
 driver.get('https://flippybitandtheattackofthehexadecimalsfrombase16.com/')
 
-container = driver.find_element(By.ID, "game-container")
-# time.sleep(10)
-
-
+# To start the game
+start_container = driver.find_element(By.ID, "game-container")
+# To send keys to the game
 body = driver.find_element(By.TAG_NAME, 'body')
-game_over = driver.find_element(By.ID, "game-over")
+# To eximate nearest time to start the game
+logo_container = driver.find_element(By.ID, "logo")
+# To get the score and return
+score_container = driver.find_element(By.ID, "score")
+# To check if the game is over
+game_over_container = driver.find_element(By.ID, "game-over")
 
-keys_list = list()
-hex_1_list = ['1', '2', '3', '4']
-hex_2_list = ['5', '6', '7', '8']
 
+# converting hex to binary with 0's padding
 def hex_to_bin(hex_str):
   int_val = int(hex_str, 16)
   return bin(int_val)[2:].zfill(4)
 
-def keys_list_append(arg_1, arg_2 = None):  
-  if arg_2 is None:
-    for i in range(4):
-      if arg_1[i] == '1':
-        keys_list.append(hex_2_list[i])
-  else:
-    for i in range(4):
-      if arg_1[i] == '1':
-        keys_list.append(hex_1_list[i])
-    for i in range(4):
-      if arg_2[i] == '1':
-        keys_list.append(hex_2_list[i])
+def check_game_over():
+  if game_over_container.is_displayed():
+    score = score_container.get_attribute("innerHTML")
+    print(f"Score is = {score}")
+    driver.quit()
+    exit()
 
-logo_container = driver.find_element(By.ID, "logo")
-while True:
-  styles = logo_container.get_attribute('style')
-  if "block" in styles:
-    break
-
-time.sleep(3)
-container.click()
-print("clicked")
-while True:
-  elements = driver.find_elements(By.XPATH, "//div[starts-with(@id, 'enemy-')]")
-  for element in elements.copy():
-    hex_str = element.get_attribute("innerHTML")
-    print(f"element_count = {len(elements)}")
-    if len(hex_str) == 1:
-      keys_list_append(hex_to_bin(hex_str))
+def main():
+  def keys_list_append(arg_1, arg_2 = None):  
+    length = len(arg_1)
+    if arg_2 is None:
+      for i in range(length):
+        if arg_1[i] == '1':
+          keys_list.append(hex_2_tuple[i])
     else:
-      hex_1 = hex_str[:1]
-      hex_2 = hex_str[1:]
-      keys_list_append(hex_to_bin(hex_1), hex_to_bin(hex_2))
+      for i in range(length):
+        if arg_1[i] == '1':
+          keys_list.append(hex_1_tuple[i])
+      for i in range(length):
+        if arg_2[i] == '1':
+          keys_list.append(hex_2_tuple[i])
 
-    try:
-      for key in keys_list:
-        body.send_keys(key)
-    finally:
-      keys_list.clear()
+  # START GAME
+  while True:
+    styles = logo_container.get_attribute('style')
+    if "block" in styles:
+      break
 
-    time.sleep(1.8)
+  time.sleep(3)
+  start_container.click()
 
+  keys_list = list()
+  hex_1_tuple = ('1', '2', '3', '4')
+  hex_2_tuple = ('5', '6', '7', '8')
 
+  removed_elements = list()
 
-# attack_value = driver.find_element(By.ID, "attackValue")
-# while True:
-#   time.sleep(1)
-#   elements = driver.find_elements(By.XPATH, "//div[starts-with(@id, 'enemy-')]")
-#   for element in elements:
-#      print(element)
-#      hex_str = element.get_attribute("innerHTML")
-#      driver.execute_script("arguments[0].innerHTML = arguments[1];", attack_value, hex_str)
-#      time.sleep(0.2)
+  # GAME LOOP
+  while True:
+    while True:
+      elements = driver.find_elements(By.XPATH, "//div[starts-with(@id, 'enemy-')]")
+      elements = [item for item in elements if item not in removed_elements]
+      element_count = len(elements)
 
+      if element_count > 0:
+        break
 
+    removed_elements.clear()
 
+    # checking if a hex number is "xx" or "x" format
+    for element in elements:
+      check_game_over()
+      hex_str = element.get_attribute("innerHTML")
+      if len(hex_str) == 1:
+        keys_list_append(hex_to_bin(hex_str))
+      elif len(hex_str) == 2:
+        hex_first_digit = hex_str[0]
+        hex_second_digit = hex_str[1]
+        keys_list_append(hex_to_bin(hex_first_digit), hex_to_bin(hex_second_digit))
 
-# Number of screenshots to take
-num_screenshots = 10
+      # sending keys to the game
+      try:
+        for key in keys_list:
+          body.send_keys(key)
+      finally:
+        keys_list.clear()
+        removed_elements.append(element)
+        time.sleep(0.9) # magic number that works
 
-# Time interval between screenshots (in seconds)
-interval = 1
-
-# Take screenshots repeatedly
-for i in range(num_screenshots):
-    # Take a screenshot and save it to a local file
-    driver.save_screenshot(f'screenshot{i}.png')
-
-    # Wait for a certain amount of time before taking the next screenshot
-    time.sleep(interval)
-
-# Close the browser
+__name__ == '__main__' and main()
