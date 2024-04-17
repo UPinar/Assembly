@@ -1,98 +1,85 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+import numpy as np
 import time
-import threading
 
-# Set up webdriver instance
-driver = webdriver.Firefox()  
 
-# Navigate to the website
+# --------SETUP--------
+mute_option = Options()
+mute_option.set_preference("media.volume_scale", "0.0")
+driver = webdriver.Firefox(options=mute_option)
 driver.get('https://flippybitandtheattackofthehexadecimalsfrombase16.com/')
+driver.execute_script("""
+    var elements = document.querySelectorAll('td[width="60%"]');
+    if (elements.length > 1) {
+        elements[1].removeAttribute('width');  // Remove the width attribute from the second td
+    }
+    if (elements.length > 0) {
+        elements[0].remove();  // Remove the first td
+    }
+""")
 
-# To start the game
-start_container = driver.find_element(By.ID, "game-container")
-# To send keys to the game
+screen_width = driver.execute_script("return screen.width")
+screen_height = driver.execute_script("return screen.height")
+driver.set_window_size(screen_width // 2, screen_height)
+driver.set_window_position(0, 0)
+
+game_container = driver.find_element(By.ID, "game-container")
 body = driver.find_element(By.TAG_NAME, 'body')
-# To eximate nearest time to start the game
-logo_container = driver.find_element(By.ID, "logo")
-# To get the score and return
-score_container = driver.find_element(By.ID, "score")
-# To check if the game is over
-game_over_container = driver.find_element(By.ID, "game-over")
+# score_container = driver.find_element(By.ID, "score")
+# game_over_container = driver.find_element(By.ID, "game-over")
 
 
-# converting hex to binary with 0's padding
-def hex_to_bin(hex_str):
+BINARY_LENGTH = 8
+
+# --------HELPER FUNCTIONS--------
+def hex_to_binary(hex_str):
   int_val = int(hex_str, 16)
-  return bin(int_val)[2:].zfill(4)
+  return bin(int_val)[2:].zfill(BINARY_LENGTH)
 
-def check_game_over():
-  if game_over_container.is_displayed():
-    score = score_container.get_attribute("innerHTML")
-    print(f"Score is = {score}")
-    driver.quit()
-    exit()
+# def control_game_is_over():
+#   if game_over_container.is_displayed():
+#     score = score_container.get_attribute("innerHTML")
+#     print(f"Score is = {score}")
+#   driver.quit()
+#   exit()
+
 
 def main():
-  def keys_list_append(arg_1, arg_2 = None):  
-    length = len(arg_1)
-    if arg_2 is None:
-      for i in range(length):
-        if arg_1[i] == '1':
-          keys_list.append(hex_2_tuple[i])
-    else:
-      for i in range(length):
-        if arg_1[i] == '1':
-          keys_list.append(hex_1_tuple[i])
-      for i in range(length):
-        if arg_2[i] == '1':
-          keys_list.append(hex_2_tuple[i])
+  def get_hit_keys_arr(hex_str: str):  
+    nonlocal hit_keys
+    binary_string = bin(int(hex_str, 16))[2:].zfill(BINARY_LENGTH)
 
-  # START GAME
+    binary_array = np.array([int(char) for char in binary_string])
+    hit_keys = np.array([key for key, bit in zip(keys, binary_array) if bit == 1])
+    return hit_keys
+  
+  # --------CLICK TO START--------
+  time.sleep(6)
+  game_container.click()
+
+
+# --------GAME STARTS--------
+  enemies_shot = dict()
+  keys = ('1', '2', '3', '4','5', '6', '7', '8')
+  hit_keys = np.array([])
+
   while True:
-    styles = logo_container.get_attribute('style')
-    if "block" in styles:
-      break
 
-  time.sleep(3)
-  start_container.click()
-
-  keys_list = list()
-  hex_1_tuple = ('1', '2', '3', '4')
-  hex_2_tuple = ('5', '6', '7', '8')
-
-  removed_elements = list()
-
-  # GAME LOOP
-  while True:
     while True:
-      elements = driver.find_elements(By.XPATH, "//div[starts-with(@id, 'enemy-')]")
-      elements = [item for item in elements if item not in removed_elements]
-      element_count = len(elements)
+      visible_enemies = np.array(driver.find_elements(By.XPATH, "//div[starts-with(@id, 'enemy-')]"))
+      enemies_to_hit = np.array([enemy for enemy in visible_enemies if enemy not in enemies_shot])
 
-      if element_count > 0:
-        break
+      if len(enemies_to_hit) > 0:
+          break
 
-    removed_elements.clear()
+    for enemy in enemies_to_hit:
+      enemy_hex = enemy.get_attribute("innerHTML")
+      hit_keys_arr = get_hit_keys_arr(enemy_hex)
+      body.send_keys(*hit_keys_arr)
+      hit_keys = np.array([])
+      enemies_shot[enemy] = True
 
-    # checking if a hex number is "xx" or "x" format
-    for element in elements:
-      check_game_over()
-      hex_str = element.get_attribute("innerHTML")
-      if len(hex_str) == 1:
-        keys_list_append(hex_to_bin(hex_str))
-      elif len(hex_str) == 2:
-        hex_first_digit = hex_str[0]
-        hex_second_digit = hex_str[1]
-        keys_list_append(hex_to_bin(hex_first_digit), hex_to_bin(hex_second_digit))
-
-      # sending keys to the game
-      try:
-        for key in keys_list:
-          body.send_keys(key)
-      finally:
-        keys_list.clear()
-        removed_elements.append(element)
-        time.sleep(0.9) # magic number that works
 
 __name__ == '__main__' and main()
