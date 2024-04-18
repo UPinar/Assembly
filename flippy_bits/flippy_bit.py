@@ -5,7 +5,6 @@ from selenium.common.exceptions import StaleElementReferenceException
 import numpy as np
 import time
 
-
 # --------SETUP--------
 mute_option = Options()
 mute_option.set_preference("media.volume_scale", "0.0")
@@ -30,7 +29,6 @@ game_container = driver.find_element(By.ID, "game-container")
 body = driver.find_element(By.TAG_NAME, 'body')
 score_container = driver.find_element(By.ID, "score")
 
-
 BINARY_LENGTH = 8
 
 # --------HELPER FUNCTIONS--------
@@ -40,42 +38,39 @@ def game_over():
   driver.quit()
   exit()
 
-
-# --------MAIN FUNCTION--------
-def main():
-  def get_hit_keys_arr(hex_str: str):  
-    nonlocal hit_keys
-    binary_string = bin(int(hex_str, 16))[2:].zfill(BINARY_LENGTH)
-
-    binary_array = np.array([int(char) for char in binary_string])
-    hit_keys = np.array([key for key, bit in zip(keys, binary_array) if bit == 1])
-    return hit_keys
-  
-
-  # --------CLICK TO START--------
+def start_game():
   time.sleep(6)
   game_container.click()
 
 
-  # --------GAME STARTS--------
+# --------MAIN FUNCTION--------
+def main():
+  def set_hit_keys_arr(hex_str: str):  
+    nonlocal hit_keys
+    
+    binary_string = bin(int(hex_str, 16))[2:].zfill(BINARY_LENGTH)
+    binary_array = np.array([int(char) for char in binary_string])
+    hit_keys = np.array([key for key, bit in zip(keys, binary_array) if bit == 1])
+  
+  start_game()
+
   enemies_shot = dict()
   keys = ('1', '2', '3', '4','5', '6', '7', '8')
   hit_keys = np.array([])
 
+  # --------GAME LOOP--------
   while True:
     while True:
       visible_enemies = np.array(driver.find_elements(By.XPATH, "//div[starts-with(@id, 'enemy-')]"))
       enemies_to_hit = np.array([enemy for enemy in visible_enemies if enemy not in enemies_shot])
-
-      if len(enemies_to_hit) > 0:
-          break
+      if len(enemies_to_hit): 
+        break
 
     for enemy in enemies_to_hit:
-      # control_game_is_over()
       try:
         enemy_hex = enemy.get_attribute("innerHTML")
-        hit_keys_arr = get_hit_keys_arr(enemy_hex)
-        body.send_keys(*hit_keys_arr)
+        set_hit_keys_arr(enemy_hex)
+        body.send_keys(*hit_keys)
         hit_keys = np.array([])
         enemies_shot[enemy] = True
       except StaleElementReferenceException:
