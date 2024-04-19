@@ -1,112 +1,39 @@
-import sys
-import binary_wrapper as bw
+from typing import Callable, Literal
+import operations as op
 
-FLAGS = {'CF': None, 'OF': None, 'SF': None, 'ZF': None }
-REG_SIZES = [8, 16, 32, 64]
+class AsmResult:
+  def __init__(self, result_obj, **kwargs):
+    self.result_int = result_obj.operand
+    self.result_str = result_obj.binary_str
+    self.flags = kwargs
 
-def create_wrappers(input_str : str, bit_count : int):
-  decimal = None
-  if input_str.startswith('0x'): 
-    decimal = int(input_str.lstrip('0x'), 16)
-  elif input_str.startswith('0b'):
-    decimal = int(input_str.lstrip('0b'), 2)
-  else:
-    decimal = int(input_str)
-
-  fixed_bit = bw.Binary_wrapper(decimal, bit_count)
-  return fixed_bit
- 
+  def __str__(self):
+    return f"result = {self.result_str} \nflags = {self.flags}"
   
-def control_args() :
-  if len(sys.argv) != 4:
-    print("Provide instruction and 2 values(hex, decimal)")
-    exit()
+class Asm:
+  def __init__(self, reg_size: Literal[8, 16, 32, 64]):
+    self.reg_size = reg_size
 
+  def perform_operation(self, operation: Callable, operand1, operand2_or_shift_count):
+    result, flags_dict = operation(operand1, operand2_or_shift_count, self.reg_size)
 
-def control_instruction(instruction_list, instruction : str):
-  if instruction not in instruction_list:
-    print(f"Instruction must be one of these : \n {instruction_list}")
-    exit()
+    asm_result = AsmResult(result, **flags_dict)
+    return asm_result
 
+  def ADD(self, operand1, operand2):
+    return self.perform_operation(op.add, operand1, operand2)
 
-def create_instruction_list():
-  return [f"ADD{i}" for i in REG_SIZES] + [f"SUB{i}" for i in REG_SIZES]
-  
+  def SUB(self, operand1, operand2):
+    return self.perform_operation(op.sub, operand1, operand2)
 
-def add(arg_1, arg_2, reg_size):
-  result_obj, total_bitlength = arg_1 + arg_2
-  print(f"Result: {result_obj}")
+  def SHL(self, operand1, shift_count):
+    return self.perform_operation(op.shl, operand1, shift_count)
 
-  # Checking Carry Flag (unsigned)
-  if total_bitlength > reg_size:
-    FLAGS['CF'] = 1
-  else: 
-    FLAGS['CF'] = 0
+  def SAL(self, operand1, shift_count):
+    return self.perform_operation(op.shl, operand1, shift_count)
 
-  # Checking Overflow Flag (signed)
-  # If both operands have the same sign and the result has a different sign, then the overflow flag is set.
-  if not (arg_1.sign_bit ^ arg_2.sign_bit) and arg_1.sign_bit != result_obj.sign_bit:
-    FLAGS['OF'] = 1
-  else:
-    FLAGS['OF'] = 0
+  def SHR(self, operand1, shift_count):
+    return self.perform_operation(op.shr, operand1, shift_count)
 
-  # Checking Sign Flag
-  FLAGS['SF'] = result_obj.sign_bit
-
-  # Checking Zero Flag
-  FLAGS['ZF'] = 1 if result_obj == bw.Binary_wrapper(0, reg_size) else 0
-
-
-def sub(arg_1, arg_2, reg_size):
-  total = arg_1 - arg_2
-  print(f"Result: {total}")
-
-  # Checking Carry Flag (unsigned)
-  if arg_1 < arg_2:
-    FLAGS['CF'] = 1
-  else: 
-    FLAGS['CF'] = 0
-
-  # Checking Overflow Flag (signed)
-  if arg_1.sign_bit != arg_2.sign_bit and arg_1.sign_bit != total.sign_bit:
-    FLAGS['OF'] = 1
-  else:
-    FLAGS['OF'] = 0
-
-  # Checking Sign Flag
-  FLAGS['SF'] = total.sign_bit
-
-  # Checking Zero Flag
-  FLAGS['ZF'] = 1 if total == bw.Binary_wrapper(0, reg_size) else 0
-
-
-def print_flags() :
-  for flag, value in FLAGS.items():
-    print(f"{flag} = {value}", end="|")
-
-
-def main():
-  control_args()
-
-  instruction_list = create_instruction_list()
-
-  input_instruction = sys.argv[1]
-  control_instruction(instruction_list, input_instruction)
-
-  reg_size = int(input_instruction[3:])
-  instuction_type = input_instruction[:3]
-  arg_1 = create_wrappers(sys.argv[2], reg_size)
-  arg_2 = create_wrappers(sys.argv[3], reg_size)
-
-  print(f"arg_1 = {arg_1}") 
-  print(f"arg_2 = {arg_2}")
-
-  if "ADD" == instuction_type:
-    add(arg_1, arg_2, reg_size)
-  elif "SUB" == instuction_type:
-    sub(arg_1, arg_2, reg_size)
-
-  print_flags()
-
-if __name__ == "__main__":
-  main()
+  def SAR(self, operand1, shift_count):
+    return self.perform_operation(op.sar, operand1, shift_count)
