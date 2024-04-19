@@ -82,7 +82,7 @@ def shl(operand1, shift_count, bit_length):
 
     return result_obj, FLAGS
 
-
+# SIGNED RIGHT SHIFT
 def sar(operand1, shift_count, bit_length):
   arg_1 = bw.Binary_wrapper(operand1, bit_length)
 
@@ -99,7 +99,6 @@ def sar(operand1, shift_count, bit_length):
       result_obj_operand |= mask
       result_obj = bw.Binary_wrapper(result_obj_operand, bit_length)
 
-
   # SAR, OF is set to the high-order bit of the original operand.
   if shift_count == 0:
     FLAGS['OF'] = 'Not affected'
@@ -108,7 +107,6 @@ def sar(operand1, shift_count, bit_length):
   else:
     FLAGS['OF'] = "Undefined"
     
-
   # Checking Carry Flag
   if shift_count == 0:
     FLAGS['CF'] = 'Not affected'
@@ -129,7 +127,7 @@ def sar(operand1, shift_count, bit_length):
   # want to return the total and the flags
   return result_obj, FLAGS
 
-
+# UNSIGNED RIGHT SHIFT
 def shr(operand1, shift_count, bit_length):
   arg_1 = bw.Binary_wrapper(operand1, bit_length)
   result_obj = arg_1 >> shift_count
