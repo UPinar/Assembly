@@ -27,7 +27,6 @@ def add(operand1, operand2, bit_length):
 
     return result_obj, FLAGS
 
-
 def sub(operand1, operand2, bit_length):
     arg_1 = bw.Binary_wrapper(operand1, bit_length)
     arg_2 = bw.Binary_wrapper(operand2, bit_length)
@@ -51,7 +50,6 @@ def sub(operand1, operand2, bit_length):
     FLAGS['ZF'] = 1 if result_obj == bw.Binary_wrapper(0, bit_length) else 0
 
     return result_obj, FLAGS
-
 
 def shl(operand1, shift_count, bit_length):
     arg_1 = bw.Binary_wrapper(operand1, bit_length)
@@ -82,7 +80,6 @@ def shl(operand1, shift_count, bit_length):
 
     return result_obj, FLAGS
 
-# SIGNED RIGHT SHIFT
 def sar(operand1, shift_count, bit_length):
   arg_1 = bw.Binary_wrapper(operand1, bit_length)
 
@@ -127,7 +124,6 @@ def sar(operand1, shift_count, bit_length):
   # want to return the total and the flags
   return result_obj, FLAGS
 
-# UNSIGNED RIGHT SHIFT
 def shr(operand1, shift_count, bit_length):
   arg_1 = bw.Binary_wrapper(operand1, bit_length)
   result_obj = arg_1 >> shift_count
@@ -156,35 +152,85 @@ def shr(operand1, shift_count, bit_length):
   # want to return the total and the flags
   return result_obj, FLAGS
 
+def mul(operand1, operand2, bit_length):
+  arg_1 = bw.Binary_wrapper(operand1, bit_length)
+  arg_2 = bw.Binary_wrapper(operand2, bit_length)
+  result_obj = arg_1 * arg_2
+
+  # INTEL MANUAL
+  # The OF and CF flags are set to 0 if the upper half of the result is 0; 
+  # otherwise, they are set to 1. 
+  # The SF, ZF, AF, and PF flags are undefined.
+
+  # Checking Carry Flag and Overflow Flag
+  if result_obj.operand >> bit_length == 0:
+    FLAGS['CF'] = 0
+    FLAGS['OF'] = 0
+  else:
+    FLAGS['CF'] = 1
+    FLAGS['OF'] = 1
+
+  FLAGS['SF'] = "Undefined"
+  FLAGS['ZF'] = "Undefined"
+
+  return result_obj, FLAGS
+
+def imul(operand1, operand2, bit_length):
+  arg_1 = bw.Binary_wrapper(operand1, bit_length)
+  arg_2 = bw.Binary_wrapper(operand2, bit_length)
+  result_obj = arg_1.imul(arg_2)
+
+  # INTEL MANUAL
+  # CF and OF flags are set when the result must be truncated to fit in the destination operand size and cleared when the result fits exactly in the destination operand size. 
+  # The SF, ZF, AF, and PF flags are undefined.
+
+  if result_obj.operand.bit_length() > bit_length:
+    FLAGS['CF'] = 1
+    FLAGS['OF'] = 1
+  else:
+    FLAGS['CF'] = 0
+    FLAGS['OF'] = 0
 
 
+  FLAGS['SF'] = "Undefined"
+  FLAGS['ZF'] = "Undefined"
 
+  return result_obj, FLAGS
 
+def div(operand1, operand2, bit_length):
+  arg_1 = bw.Binary_wrapper(operand1, bit_length)
+  arg_2 = bw.Binary_wrapper(operand2, bit_length // 2)
 
+  if arg_2.operand == 0:
+    raise ZeroDivisionError("Division by zero")
 
+  result_obj = arg_1 // arg_2
 
+  # INTEL MANUAL
+  # The CF, OF, SF, ZF, AF, and PF flags are undefined.
 
+  FLAGS['CF'] = "Undefined"
+  FLAGS['OF'] = "Undefined"
+  FLAGS['SF'] = "Undefined"
+  FLAGS['ZF'] = "Undefined"
 
+  return result_obj, FLAGS
 
+def idiv(operand1, operand2, bit_length):
+  arg_1 = bw.Binary_wrapper(operand1, bit_length)
+  arg_2 = bw.Binary_wrapper(operand2, bit_length // 2)
 
+  if arg_2.operand == 0:
+    raise ZeroDivisionError("Division by zero")
 
+  result_obj = arg_1.idiv(arg_2)
 
+  # INTEL MANUAL
+  # The CF, OF, SF, ZF, AF, and PF flags are undefined.
 
+  FLAGS['CF'] = "Undefined"
+  FLAGS['OF'] = "Undefined"
+  FLAGS['SF'] = "Undefined"
+  FLAGS['ZF'] = "Undefined"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return result_obj, FLAGS

@@ -1,5 +1,8 @@
 class Binary_wrapper:
   def __init__(self, operand : int, bit_length : int): 
+    # we need to check if the operand is within the bit length if not we need to truncate the value to the bit length
+    if operand.bit_length() > bit_length:
+      operand = operand & ((1 << bit_length) - 1)
     self.operand = operand
     self.bit_length = bit_length
     self.binary_str = self._get_binary_string()
@@ -44,6 +47,47 @@ class Binary_wrapper:
       return self
     else:
       raise ValueError("Shift count must be a non-negative integer")
+    
+  def __mul__(self, other : 'Binary_wrapper'):
+    total_val = self.operand * other.operand
+    total_bit_length = self.bit_length * 2
+
+    result_obj = Binary_wrapper(total_val, total_bit_length)
+    return result_obj
+
+  def imul(self, other: 'Binary_wrapper'):
+    self.operand = _to_signed(self.operand, self.bit_length)
+    other.operand = _to_signed(other.operand, other.bit_length)
+
+    result_obj = self * other
+
+    if result_obj.operand < 0:
+      result_obj.operand = result_obj.operand & ((1 << result_obj.bit_length) - 1)
+
+    return result_obj
+  
+  def __floordiv__(self, other):
+
+    # check if only 1 operand is negative
+    if (self.operand < 0) ^ (other.operand < 0):
+      total_val = -(-self.operand // other.operand)
+    else:
+      total_val = self.operand // other.operand
+
+    result_obj = Binary_wrapper(total_val, other.bit_length)
+    return result_obj
+  
+  def idiv(self, other):
+    self.operand = _to_signed(self.operand, self.bit_length)
+    other.operand = _to_signed(other.operand, other.bit_length)
+
+    result_obj = self // other
+
+    if result_obj.operand < 0:
+      result_obj.operand = result_obj.operand & ((1 << result_obj.bit_length) - 1)
+    
+    return result_obj
+
       
   def __lt__(self, other):
     return self.operand < other.operand
@@ -60,3 +104,11 @@ class Binary_wrapper:
         return binary_str[-self.bit_length:]
       else:
         return binary_str.zfill(self.bit_length)
+    
+def _to_signed(operand: int, bit_length: int):
+    operand = operand & ((1 << bit_length) - 1)
+
+    if operand >= (1 << (bit_length - 1)):
+      return operand - (1 << bit_length)
+    else: 
+      return operand

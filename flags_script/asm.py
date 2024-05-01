@@ -4,11 +4,14 @@ import operations as op
 class AsmResult:
   def __init__(self, result_obj, **kwargs):
     self.result_int = result_obj.operand
-    self.result_str = result_obj.binary_str
+    self.result_str = ' '.join(result_obj.binary_str[i:i+4] for i in range(0, len(result_obj.binary_str), 4))
     self.flags = kwargs
 
   def __str__(self):
-    return f"result = {self.result_str} \nflags = {self.flags}"
+    return f"result = {self.result_str} \nresult_hex = {self.hex()} \nflags = {self.flags}"
+  
+  def hex(self):
+    return hex(self.result_int)
   
 class Asm:
   def __init__(self, reg_size: Literal[8, 16, 32, 64]):
@@ -37,3 +40,15 @@ class Asm:
 
   def SAR(self, operand1, shift_count):
     return self.perform_operation(op.sar, operand1, shift_count)
+  
+  def MUL(self, operand1, operand2):
+    return self.perform_operation(op.mul, operand1, operand2)
+  
+  def IMUL(self, operand1, operand2):
+    return self.perform_operation(op.imul, operand1, operand2)
+  
+  def DIV(self, operand1, operand2):
+    return self.perform_operation(op.div, operand1, operand2)
+  
+  def IDIV(self, operand1, operand2):
+    return self.perform_operation(op.idiv, operand1, operand2)
